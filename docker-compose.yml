@@ -1,0 +1,72 @@
+version: '3.7'
+
+services:
+  backend:
+    build:
+      context: './backend'
+      args:
+        uid: ${UID}
+    container_name: backend
+    restart: always
+    environment:
+      - APACHE_RUN_USER=#${UID}
+      - APACHE_RUN_GROUP=#${UID}
+    volumes:
+      - ./backend:/var/www/html
+    ports:
+      - 8000:80
+    networks:
+      backend:
+        aliases:
+          - laravel-app
+      frontend:
+
+  mysql-db:
+    image: mysql:5.7
+    container_name: mysql-db
+    restart: always
+    volumes:
+      - mysql_data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USERNAME}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    networks:
+      backend:
+        aliases:
+          - db
+
+  phpmyadmin:
+    depends_on:
+      - mysql-db
+    image: phpmyadmin/phpmyadmin
+    restart: always
+    ports:
+      - '8002:80'
+    environment:
+      PMA_HOST: mysql-db
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    networks:
+      backend:
+
+  frontend:
+    build:
+      context: './frontend'
+    restart: always
+    container_name: frontend
+    ports:
+      - '8001:80'
+    volumes:
+      - './frontend:/app'
+    networks: 
+      frontend:
+
+volumes:
+  mysql_data:
+
+networks:
+  backend:
+    name: backend-network
+  frontend:
+    name: frontend-network
